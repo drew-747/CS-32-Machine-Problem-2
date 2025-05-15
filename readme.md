@@ -109,7 +109,6 @@ You are provided with a C template that implements steps (1) and (3). Your task 
 ## References
 
 - [Huffman Coding (Wikipedia)](https://en.wikipedia.org/wiki/Huffman_coding)
-- [CS32 Course Notes on Huffman Coding](#) *(replace with actual link if available)*
 
 ## Authors
 
