@@ -18,17 +18,21 @@ Given a text file (terminated by a `;`), the program must:
 ## Technical Details
 
 ### Huffman Coding Algorithm
+
 Huffman coding is a greedy algorithm used for lossless data compression. It assigns variable-length codes to input characters, with shorter codes assigned to more frequent characters. The process involves:
+
 - Counting character frequencies.
 - Building a binary tree (Huffman tree) where each leaf node represents a character and its frequency.
 - Using a priority queue (min-heap) to repeatedly combine the two nodes with the lowest frequencies until a single tree remains.
 - Traversing the tree to assign binary codes to each character.
 
 ### Data Structures Used
+
 - **Priority Queue (Min-Heap):** Used to efficiently extract the two nodes with the lowest frequencies during tree construction.
 - **Binary Tree Nodes:** Each node contains a character, its frequency, and pointers to left and right children.
 
 ### Implementation Approach
+
 - **PQ_INSERT:** Inserts a new node into the min-heap, maintaining the heap property.
 - **PQ_EXTRACT:** Removes and returns the node with the minimum frequency from the heap.
 - **HEAPIFY:** Restores the min-heap property from a given index.
@@ -41,6 +45,7 @@ Huffman coding is a greedy algorithm used for lossless data compression. It assi
 - All characters (including spaces, newlines, tabs, and special characters) are significant and case-sensitive.
 
 **Example Input:**
+
 ```
 I
 see
@@ -50,12 +55,14 @@ trees!!!!!;
 ## Output Format
 
 - For each character (before the `;`), print its Huffman code in the format:
+
   ```
   %c :: [code]
   ```
 - Output is sorted by increasing Huffman code.
 
 **Example Output:**
+
 ```
 r :: 000
 I :: 0010
@@ -65,6 +72,7 @@ s :: 011
 e :: 10
 ! :: 11
 ```
+
 *(Note: `<newline>` represents the actual newline character.)*
 
 ## Implementation Details
@@ -72,44 +80,46 @@ e :: 10
 You are provided with a C template that implements steps (1) and (3). Your task is to implement the following functions for step (2):
 
 - `void PQ_INSERT (PriorityQueue *P, BinaryTreeNode *x)`  
+
   *Insert a node into the priority queue (min-heap).*
-
 - `BinaryTreeNode *PQ_EXTRACT (PriorityQueue *P)`  
+
   *Extract the node with the minimum frequency from the priority queue.*
-
 - `void HEAPIFY (PriorityQueue *P, int idx)`  
-  *Restore the min-heap property starting from index `idx`.*
 
+  *Restore the min-heap property starting from index `idx`.*
 - `BinaryTreeNode *BUILD_HUFFMAN_TREE (PriorityQueue *P)`  
+
   *Construct the Huffman encoding tree from the priority queue.*
 
 **Restrictions:**  
+
 - You may add helper functions, but **do not remove or change the parameters/return values of the provided functions**.
 
-## How to Build and Run (C)
+## How to Run (C)
 
 1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/yourusername/cs32-huffman-coding.git
-   cd cs32-huffman-coding
-   ```
 
-2. **Compile the code using GCC:**
+   ```sh
+   git clone https://github.com/<your-github-username>/CS-32-Machine-Problem-2.git
+   cd CS-32-Machine-Problem-2
+   ```
+1. **Compile the code using GCC:**
+
    ```sh
    gcc -o huffman main.c
    ```
-   *(Replace `main.c` with the actual source file names if different.)*
+1. **Run the program:**
 
-3. **Run the program:**
    ```sh
    ./huffman < input.txt
    ```
+
    Where `input.txt` contains your input data.
 
 ## References
 
 - [Huffman Coding (Wikipedia)](https://en.wikipedia.org/wiki/Huffman_coding)
-- [CS32 Course Notes on Huffman Coding](#) *(replace with actual link if available)*
 
 ## Authors
 
@@ -118,4 +128,4 @@ You are provided with a C template that implements steps (1) and (3). Your task 
 
 ## License
 
-This project is for educational purposes as part of the CS32 course at the University of the Philippines Diliman, Department of Computer Science.
+This project is strictly used for educational purposes as part of the CS32 course at the University of the Philippines Diliman, Department of Computer Science.
