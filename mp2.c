@@ -2,79 +2,192 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_CHARS 256
+#define newline printf("\n")
 
-typedef struct BinaryTreeNode
+typedef struct binarytreenode BinaryTreeNode;
+struct binarytreenode
 {
-    char ch;
-    int freq;
-    struct BinaryTreeNode *left, *right;
+    BinaryTreeNode *LSON;
+    char DATA;
+    int FREQ;
+    BinaryTreeNode *RSON;
     unsigned char min_char_in_subtree;
-} BinaryTreeNode;
+};
 
-typedef struct
+typedef struct priorityqueue
 {
-    BinaryTreeNode **data;
     int size;
     int capacity;
+    BinaryTreeNode **array;
 } PriorityQueue;
 
-typedef struct
+void PQ_INSERT(PriorityQueue *, BinaryTreeNode *);
+BinaryTreeNode *PQ_EXTRACT(PriorityQueue *);
+void HEAPIFY(PriorityQueue *, int);
+void PQ_OVERFLOW(void);
+void PQ_UNDERFLOW(void);
+
+void CREATE_PQ(PriorityQueue **);
+BinaryTreeNode *BUILD_HUFFMAN_TREE(PriorityQueue *);
+void PRINT_HUFFMAN_CODE(BinaryTreeNode *, int *, int);
+BinaryTreeNode **read_input(int *);
+void FREE_PQ(PriorityQueue *);
+void FREE_TREE(BinaryTreeNode *);
+
+int is_smaller(BinaryTreeNode *n1, BinaryTreeNode *n2)
 {
-    char ch;
-    char code[MAX_CHARS];
-} HuffmanCode;
-
-void PQ_INSERT(PriorityQueue *P, BinaryTreeNode *x);
-BinaryTreeNode *PQ_EXTRACT(PriorityQueue *P);
-void HEAPIFY(PriorityQueue *P, int idx);
-BinaryTreeNode *BUILD_HUFFMAN_TREE(PriorityQueue *P);
-void swap_nodes(BinaryTreeNode **a, BinaryTreeNode **b);
-int parent(int i);
-int left(int i);
-int right(int i);
-PriorityQueue *create_priority_queue(int capacity);
-BinaryTreeNode *create_node(char ch_val, int freq_val);
-void generate_codes_recursive(BinaryTreeNode *root, char *current_code_str, int depth, HuffmanCode *codes_array, int *codes_count);
-int compare_huffman_codes(const void *a, const void *b);
-void free_huffman_tree(BinaryTreeNode *root);
-
-void swap_nodes(BinaryTreeNode **a, BinaryTreeNode **b)
-{
-    BinaryTreeNode *tmp = *a;
-    *a = *b;
-    *b = tmp;
-}
-
-int parent(int i) { return (i - 1) / 2; }
-int left(int i) { return 2 * i + 1; }
-int right(int i) { return 2 * i + 2; }
-
-int is_less_than(BinaryTreeNode *n1, BinaryTreeNode *n2)
-{
-    if (n1->freq < n2->freq)
+    if (n1->FREQ < n2->FREQ)
         return 1;
-    if (n1->freq > n2->freq)
+    if (n1->FREQ > n2->FREQ)
+        return 0;
+
+    int n1_is_input_leaf = (n1->DATA != '\0');
+    int n2_is_input_leaf = (n2->DATA != '\0');
+
+    if (n1_is_input_leaf && !n2_is_input_leaf)
+        return 1;
+    if (!n1_is_input_leaf && n2_is_input_leaf)
         return 0;
 
     return n1->min_char_in_subtree < n2->min_char_in_subtree;
 }
 
-void HEAPIFY(PriorityQueue *P, int idx)
+int main()
 {
-    int l = left(idx);
-    int r = right(idx);
-    int smallest = idx;
+    PriorityQueue *HuffmanCode;
+    BinaryTreeNode *HuffmanRoot;
 
-    if (l < P->size && is_less_than(P->data[l], P->data[smallest]))
-        smallest = l;
-    if (r < P->size && is_less_than(P->data[r], P->data[smallest]))
-        smallest = r;
+    CREATE_PQ(&HuffmanCode);
+    HuffmanRoot = BUILD_HUFFMAN_TREE(HuffmanCode);
+    int *code = (int *)malloc(HuffmanCode->capacity * sizeof(int));
+    PRINT_HUFFMAN_CODE(HuffmanRoot, code, 0);
+    FREE_TREE(HuffmanRoot);
+    FREE_PQ(HuffmanCode);
+    free(code);
+    return 0;
+}
 
-    if (smallest != idx)
+BinaryTreeNode *create_node(char data)
+{
+    BinaryTreeNode *node = NULL;
+
+    node = (BinaryTreeNode *)malloc(sizeof(BinaryTreeNode));
+    if (node == NULL)
     {
-        swap_nodes(&P->data[idx], &P->data[smallest]);
-        HEAPIFY(P, smallest);
+        perror("Failed to allocate node");
+        exit(EXIT_FAILURE);
+    }
+    node->DATA = data;
+    node->FREQ = 1;
+    node->LSON = NULL;
+    node->RSON = NULL;
+    node->min_char_in_subtree = (unsigned char)data;
+
+    return node;
+}
+
+void free_node(BinaryTreeNode *node)
+{
+    free(node);
+    return;
+}
+
+void free_node_array(BinaryTreeNode **array, int size)
+{
+    int i;
+
+    for (i = 0; i < size; i++)
+        free_node(array[i]);
+
+    return;
+}
+
+BinaryTreeNode *search_node_array(BinaryTreeNode **array, int size, char data)
+{
+    int i;
+
+    for (i = 0; i < size; i++)
+        if (array[i]->DATA == data)
+            return array[i];
+
+    return NULL;
+}
+
+BinaryTreeNode **read_input(int *size)
+{
+    int n = 0, i;
+    char symbol;
+    BinaryTreeNode **array = NULL, **temp;
+    BinaryTreeNode *node = NULL;
+
+    while (scanf("%c", &symbol) != EOF)
+    {
+        if (n == 0)
+        {
+            array = (BinaryTreeNode **)malloc(sizeof(BinaryTreeNode *));
+            array[0] = create_node(symbol);
+            n++;
+        }
+        else
+        {
+            node = search_node_array(array, n, symbol);
+
+            if (node == NULL)
+            {
+                temp = array;
+                array = (BinaryTreeNode **)malloc((n + 1) * sizeof(BinaryTreeNode *));
+                for (i = 0; i < n; i++)
+                    array[i] = temp[i];
+                array[n] = create_node(symbol);
+                free(temp);
+                n++;
+            }
+            else
+            {
+                node->FREQ++;
+            }
+        }
+    }
+
+    *size = n;
+
+    return array;
+}
+
+void CREATE_PQ(PriorityQueue **P)
+{
+    BinaryTreeNode **array = NULL;
+    BinaryTreeNode *x;
+    int i, n;
+
+    *P = (PriorityQueue *)malloc(sizeof(PriorityQueue));
+    array = read_input(&(*P)->capacity);
+
+    (*P)->array = array;
+    (*P)->size = (*P)->capacity;
+
+    n = (*P)->size - 1;
+    for (i = (n - 1) / 2; i >= 0; i--)
+        HEAPIFY(*P, i);
+
+    return;
+}
+
+void FREE_PQ(PriorityQueue *P)
+{
+
+    free(P->array);
+    free(P);
+    return;
+}
+
+void FREE_TREE(BinaryTreeNode *alpha)
+{
+    if (alpha != NULL)
+    {
+        FREE_TREE(alpha->LSON);
+        FREE_TREE(alpha->RSON);
+        free(alpha);
     }
 }
 
@@ -82,194 +195,116 @@ void PQ_INSERT(PriorityQueue *P, BinaryTreeNode *x)
 {
     if (P->size == P->capacity)
     {
-        P->capacity *= 2;
-        P->data = realloc(P->data, P->capacity * sizeof(BinaryTreeNode *));
-        if (!P->data)
-        {
-            perror("Failed to reallocate memory for priority queue");
-            exit(EXIT_FAILURE);
-        }
+        PQ_OVERFLOW();
+        return;
     }
-    int i = P->size++;
-    P->data[i] = x;
-
-    while (i != 0 && is_less_than(P->data[i], P->data[parent(i)]))
+    int i = P->size;
+    P->array[i] = x;
+    P->size++;
+    while (i > 0)
     {
-        swap_nodes(&P->data[i], &P->data[parent(i)]);
-        i = parent(i);
+        int parent = (i - 1) / 2;
+        if (is_smaller(P->array[i], P->array[parent]))
+        {
+            BinaryTreeNode *tmp = P->array[i];
+            P->array[i] = P->array[parent];
+            P->array[parent] = tmp;
+            i = parent;
+        }
+        else
+            break;
     }
 }
 
 BinaryTreeNode *PQ_EXTRACT(PriorityQueue *P)
 {
     if (P->size == 0)
-        return NULL;
-    BinaryTreeNode *min_node = P->data[0];
-    P->data[0] = P->data[--P->size];
-    if (P->size > 0)
     {
-        HEAPIFY(P, 0);
+        PQ_UNDERFLOW();
+        return NULL;
     }
+    BinaryTreeNode *min_node = P->array[0];
+    P->array[0] = P->array[P->size - 1];
+    P->size--;
+    HEAPIFY(P, 0);
     return min_node;
 }
 
-PriorityQueue *create_priority_queue(int capacity)
+void HEAPIFY(PriorityQueue *P, int idx)
 {
-    PriorityQueue *P = malloc(sizeof(PriorityQueue));
-    if (!P)
+    int smallest = idx;
+    int l = 2 * idx + 1;
+    int r = 2 * idx + 2;
+    if (l < P->size && is_smaller(P->array[l], P->array[smallest]))
+        smallest = l;
+    if (r < P->size && is_smaller(P->array[r], P->array[smallest]))
+        smallest = r;
+    if (smallest != idx)
     {
-        perror("Failed to allocate memory for priority queue");
-        exit(EXIT_FAILURE);
+        BinaryTreeNode *tmp = P->array[idx];
+        P->array[idx] = P->array[smallest];
+        P->array[smallest] = tmp;
+        HEAPIFY(P, smallest);
     }
-    P->data = malloc(capacity * sizeof(BinaryTreeNode *));
-    if (!P->data)
-    {
-        perror("Failed to allocate memory for priority queue data");
-        free(P);
-        exit(EXIT_FAILURE);
-    }
-    P->size = 0;
-    P->capacity = capacity;
-    return P;
-}
-
-BinaryTreeNode *create_node(char ch_val, int freq_val)
-{
-    BinaryTreeNode *node = malloc(sizeof(BinaryTreeNode));
-    if (!node)
-    {
-        perror("Failed to allocate memory for node");
-        exit(EXIT_FAILURE);
-    }
-    node->ch = ch_val;
-    node->freq = freq_val;
-    node->min_char_in_subtree = (unsigned char)ch_val;
-    node->left = node->right = NULL;
-    return node;
 }
 
 BinaryTreeNode *BUILD_HUFFMAN_TREE(PriorityQueue *P)
 {
     if (P == NULL || P->size == 0)
         return NULL;
-
     while (P->size > 1)
     {
-        BinaryTreeNode *left_c = PQ_EXTRACT(P);
-        BinaryTreeNode *right_c = PQ_EXTRACT(P);
-
-        BinaryTreeNode *parent_node = create_node('\0', left_c->freq + right_c->freq);
-
-        parent_node->min_char_in_subtree = (left_c->min_char_in_subtree < right_c->min_char_in_subtree) ? left_c->min_char_in_subtree : right_c->min_char_in_subtree;
-
-        parent_node->left = left_c;
-        parent_node->right = right_c;
-
-        PQ_INSERT(P, parent_node);
+        BinaryTreeNode *left = PQ_EXTRACT(P);
+        BinaryTreeNode *right = PQ_EXTRACT(P);
+        BinaryTreeNode *internal = (BinaryTreeNode *)malloc(sizeof(BinaryTreeNode));
+        if (!internal)
+        {
+            perror("Failed to allocate internal node");
+            exit(EXIT_FAILURE);
+        }
+        internal->DATA = '\0';
+        internal->FREQ = left->FREQ + right->FREQ;
+        internal->LSON = left;
+        internal->RSON = right;
+        internal->min_char_in_subtree = (left->min_char_in_subtree < right->min_char_in_subtree) ? left->min_char_in_subtree : right->min_char_in_subtree;
+        PQ_INSERT(P, internal);
     }
     return PQ_EXTRACT(P);
 }
 
-void generate_codes_recursive(BinaryTreeNode *root, char *current_code_str, int depth, HuffmanCode *codes_array, int *codes_count)
+void PRINT_HUFFMAN_CODE(BinaryTreeNode *root, int *code, int top)
 {
-    if (!root)
-        return;
+    int i;
 
-    if (!root->left && !root->right)
+    if (root->LSON != NULL)
     {
-        current_code_str[depth] = '\0';
-        codes_array[*codes_count].ch = root->ch;
-        strcpy(codes_array[*codes_count].code, current_code_str);
-        (*codes_count)++;
-        return;
+        code[top] = 0;
+        PRINT_HUFFMAN_CODE(root->LSON, code, top + 1);
     }
 
-    current_code_str[depth] = '0';
-    generate_codes_recursive(root->left, current_code_str, depth + 1, codes_array, codes_count);
+    if (root->RSON != NULL)
+    {
+        code[top] = 1;
+        PRINT_HUFFMAN_CODE(root->RSON, code, top + 1);
+    }
 
-    current_code_str[depth] = '1';
-    generate_codes_recursive(root->right, current_code_str, depth + 1, codes_array, codes_count);
+    if (root->LSON == NULL && root->RSON == NULL)
+    {
+        printf("%c :: ", root->DATA);
+        for (i = 0; i < top; i++)
+            printf("%d", code[i]);
+        newline;
+    }
 }
 
-int compare_huffman_codes(const void *a, const void *b)
+void PQ_OVERFLOW(void)
 {
-    HuffmanCode *hc1 = (HuffmanCode *)a;
-    HuffmanCode *hc2 = (HuffmanCode *)b;
-    return strcmp(hc1->code, hc2->code);
+    printf("Priority Queue overflow detected.\n");
+    exit(1);
 }
 
-void free_huffman_tree(BinaryTreeNode *root)
+void PQ_UNDERFLOW(void)
 {
-    if (root == NULL)
-    {
-        return;
-    }
-    free_huffman_tree(root->left);
-    free_huffman_tree(root->right);
-    free(root);
-}
-
-int main()
-{
-    int freq[MAX_CHARS] = {0};
-    int c;
-    int unique_char_count = 0;
-    while ((c = getchar()) != EOF && c != ';')
-    {
-        if (freq[(unsigned char)c] == 0)
-        {
-            unique_char_count++;
-        }
-        freq[(unsigned char)c]++;
-    }
-
-    if (unique_char_count == 0)
-    {
-        return 0;
-    }
-
-    PriorityQueue *P = create_priority_queue(unique_char_count > 0 ? unique_char_count : 16);
-    for (int i = 0; i < MAX_CHARS; ++i)
-    {
-        if (freq[i] > 0)
-        {
-            PQ_INSERT(P, create_node((char)i, freq[i]));
-        }
-    }
-
-    BinaryTreeNode *root = BUILD_HUFFMAN_TREE(P);
-
-    HuffmanCode codes_array[MAX_CHARS];
-    int codes_count = 0;
-    char current_code_str[MAX_CHARS];
-
-    if (root)
-    {
-        if (unique_char_count == 1)
-        {
-            codes_array[0].ch = root->ch;
-            strcpy(codes_array[0].code, "0");
-            codes_count = 1;
-        }
-        else
-        {
-            generate_codes_recursive(root, current_code_str, 0, codes_array, &codes_count);
-        }
-    }
-
-    qsort(codes_array, codes_count, sizeof(HuffmanCode), compare_huffman_codes);
-
-    for (int i = 0; i < codes_count; ++i)
-    {
-        printf("%c :: %s\n", codes_array[i].ch, codes_array[i].code);
-    }
-
-    free_huffman_tree(root);
-    if (P)
-    {
-        free(P->data);
-        free(P);
-    }
-
-    return 0;
+    printf("Priority Queue underflow detected.\n");
+    exit(1);
 }
